@@ -1,25 +1,42 @@
-
-using Project.Web.Service; // Doðru namespace kullanýmý
+using Project.Web.Service;
 using System.Net.Http.Headers;
+using Project.Service.Interfaces;
+using Project.Service.Contracts;
+using Project.Core.Interfaces;
+using Project.Repository;
+using Project.Repository.Context;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// JSON dosyasý yüklenirken hata kontrolü
+// JSON dosyasÄ± yÃ¼klenirken hata kontrolÃ¼
 try
 {
-    Console.WriteLine("Config dosyasý yükleniyor: " +
+    Console.WriteLine("Config dosyasÄ± yÃ¼kleniyor: " +
         builder.Configuration.GetDebugView());
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Config yükleme hatasý: {ex}");
+    Console.WriteLine($"Config yÃ¼kleme hatasÄ±: {ex}");
     throw;
 }
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-// HttpClient servis kaydý (daha saðlam versiyon)
+// Session desteÄŸi ekle
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Database context'i ekle
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// HttpClient servis kaydÄ± (daha saÄŸlam versiyon)
 builder.Services.AddHttpClient<IApiService, ApiService>(client =>
 {
     var apiUrl = builder.Configuration["ApiSettings:BaseUrl"]
@@ -28,15 +45,21 @@ builder.Services.AddHttpClient<IApiService, ApiService>(client =>
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 
-    // Timeout ayarý (opsiyonel)
+    // Timeout ayarÄ± (opsiyonel)
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// HttpContext eriþimi
+// HttpContext eriÅŸimi
 builder.Services.AddHttpContextAccessor();
 
-// ApiService kaydý (interface ile)
+// ApiService kaydÄ± (interface ile)
 builder.Services.AddScoped<IApiService, ApiService>();
+
+// UnitOfWork kaydÄ±
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// AuthService kaydÄ±
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
@@ -52,8 +75,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Session middleware'ini ekle
+app.UseSession();
+
 // Authentication ve Authorization
-app.UseAuthentication(); // Bu satýrý eklemeyi unutmayýn
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
