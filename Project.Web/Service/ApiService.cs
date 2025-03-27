@@ -24,7 +24,7 @@ namespace Project.Web.Service
             _configuration = configuration;
             _logger = logger;
 
-            // API base URL'sini appsettings'den al
+            
             _httpClient.BaseAddress = new Uri(_configuration["ApiSettings:BaseUrl"]!);
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -134,7 +134,7 @@ namespace Project.Web.Service
             }
         }
 
-        // Özel metodlar
+  
         public async Task<AuthResponseDto?> LoginAsync(LoginDto loginDto)
         {
             return await PostAsync<AuthResponseDto>("api/auth/login", loginDto);

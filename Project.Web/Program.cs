@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// JSON dosyası yüklenirken hata kontrolü
+
 try
 {
     Console.WriteLine("Config dosyası yükleniyor: " +
@@ -21,10 +21,10 @@ catch (Exception ex)
     throw;
 }
 
-// Add services to the container.
+
 builder.Services.AddRazorPages();
 
-// Session desteği ekle
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -32,11 +32,10 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Database context'i ekle
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// HttpClient servis kaydı (daha sağlam versiyon)
+
 builder.Services.AddHttpClient<IApiService, ApiService>(client =>
 {
     var apiUrl = builder.Configuration["ApiSettings:BaseUrl"]
@@ -45,20 +44,15 @@ builder.Services.AddHttpClient<IApiService, ApiService>(client =>
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 
-    // Timeout ayarı (opsiyonel)
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// HttpContext erişimi
+
 builder.Services.AddHttpContextAccessor();
 
-// ApiService kaydı (interface ile)
+
 builder.Services.AddScoped<IApiService, ApiService>();
-
-// UnitOfWork kaydı
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-// AuthService kaydı
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
@@ -75,10 +69,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Session middleware'ini ekle
 app.UseSession();
 
-// Authentication ve Authorization
+
 app.UseAuthentication();
 app.UseAuthorization();
 
